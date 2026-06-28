@@ -1,0 +1,13 @@
+@import "tailwindcss";
+body {
+  font-family: 'Inter', sans-serif;
+  background: #0f0f0f;
+  color: white;
+}
+.map-dark {
+  filter: brightness(0.45) saturate(0.6) hue-rotate(60deg);
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
