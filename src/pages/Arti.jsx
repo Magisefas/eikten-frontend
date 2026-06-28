@@ -2,14 +2,7 @@ import { useState, useEffect } from 'react'
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-
-const events = [
-  { id:0, name:'Gyvoji muzika — Džiazas', meta:'Keistuoliai · Laisvės al. 93', time:'Dabar',    color:'#f87171', lat:54.8985, lng:23.9036 },
-  { id:1, name:'Gatvės maisto mugė',       meta:'Rotušės a. · Nemokama',         time:'Po 20min', color:'#fbbf24', lat:54.8972, lng:23.9405 },
-  { id:2, name:'Atviras kinas lauke',      meta:'Santakos parkas · Nemokama',    time:'22:00',    color:'#4ade80', lat:54.8920, lng:23.9194 },
-  { id:3, name:'Vinilo plokštelių mugė',   meta:'Meno parkas · Nemokama',        time:'21:30',    color:'#a78bfa', lat:54.9010, lng:23.9280 },
-  { id:4, name:'Krepšinis — Žalgiris',     meta:'Žalgirio arena · 22:30',        time:'22:30',    color:'#f97316', lat:54.8956, lng:23.9140 },
-]
+import api from '../api'
 
 function haversine(la1,lo1,la2,lo2){
   const R=6371000,r=d=>d*Math.PI/180
@@ -33,25 +26,42 @@ const youIcon = L.divIcon({
 })
 
 export default function Arti() {
-  const [userPos, setUserPos] = useState([54.8985, 23.9280])
-  const [located, setLocated] = useState(false)
-  const [selected, setSelected] = useState(0)
-  const [search, setSearch] = useState('')
-  const [filter, setFilter] = useState('all')
+  const [events, setEvents]     = useState([])
+  const [loading, setLoading]   = useState(true)
+  const [userPos, setUserPos]   = useState([54.8985, 23.9280])
+  const [located, setLocated]   = useState(false)
+  const [selected, setSelected] = useState(null)
+  const [search, setSearch]     = useState('')
+  const [filter, setFilter]     = useState('all')
   const now = new Date()
   const clock = String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')
 
+  // Fetch events from Laravel API
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const params = {}
+        if (filter !== 'all') params.category = filter
+        if (search) params.search = search
+        const res = await api.get('/api/events', { params })
+        setEvents(res.data.data)
+        if (res.data.data.length > 0) setSelected(res.data.data[0].id)
+      } catch (err) {
+        console.error('Failed to fetch events:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchEvents()
+  }, [filter, search])
+
+  // Get user location
   useEffect(() => {
     navigator.geolocation?.getCurrentPosition(p => {
       setUserPos([p.coords.latitude, p.coords.longitude])
       setLocated(true)
     })
   }, [])
-
-  const filtered = events.filter(e =>
-    e.name.toLowerCase().includes(search.toLowerCase()) ||
-    e.meta.toLowerCase().includes(search.toLowerCase())
-  )
 
   const chips = ['all','Muzika','Maistas','Sportas','Kultūra','Nemokama']
 
@@ -65,14 +75,14 @@ export default function Arti() {
       <div className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" style={{background:ev.color}}></div>
       <div className="flex-1 min-w-0">
         <div className="text-sm font-semibold text-white truncate">{ev.name}</div>
-        <div className="text-xs text-[#555] mt-0.5">{ev.meta}</div>
+        <div className="text-xs text-[#555] mt-0.5">{ev.location}</div>
       </div>
       <div className="flex flex-col items-end gap-1 flex-shrink-0">
         <span className={`text-[9px] px-2 py-0.5 rounded-full font-semibold ${
-          ev.time==='Dabar' ? 'bg-[#2a1212] text-[#f87171]' :
-          ev.time.includes('min') ? 'bg-[#261f08] text-[#fbbf24]' :
+          ev.time_label==='Dabar' ? 'bg-[#2a1212] text-[#f87171]' :
+          ev.time_label?.includes('min') ? 'bg-[#261f08] text-[#fbbf24]' :
           'bg-[#0d1f0d] text-[#4ade80]'
-        }`}>{ev.time}</span>
+        }`}>{ev.time_label}</span>
         <span className="text-[10px] text-[#4ade80] font-semibold">
           {located ? fmtDist(haversine(userPos[0],userPos[1],ev.lat,ev.lng)) : '...'}
         </span>
@@ -84,9 +94,7 @@ export default function Arti() {
     <div className="flex flex-col md:flex-row-reverse flex-1 overflow-hidden">
 
       {/* ── LEFT PANEL (desktop only) ── */}
-      <div className="hidden md:flex flex-col w-96 border-r border-[#1a1a1a] bg-[#0f0f0f] flex-shrink-0">
-
-        {/* Header */}
+      <div className="hidden md:flex flex-col w-96 border-l border-[#1a1a1a] bg-[#0f0f0f] flex-shrink-0">
         <div className="px-5 pt-6 pb-4 border-b border-[#1a1a1a]">
           <div className="flex items-center justify-between mb-4">
             <div>
@@ -103,7 +111,6 @@ export default function Arti() {
             </div>
           </div>
 
-          {/* Search */}
           <div className="flex items-center gap-2 bg-[#1a1a1a] border border-[#252525] rounded-xl px-3 py-2.5 mb-3 focus-within:border-[#4ade80] transition-colors">
             <i className="ti ti-search text-[#555]"></i>
             <input
@@ -116,7 +123,6 @@ export default function Arti() {
             {search && <i className="ti ti-x text-[#444] cursor-pointer text-sm" onClick={() => setSearch('')}></i>}
           </div>
 
-          {/* Filters */}
           <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
             {chips.map(c => (
               <button key={c} onClick={() => setFilter(c)}
@@ -129,19 +135,23 @@ export default function Arti() {
           </div>
         </div>
 
-        {/* Event list — desktop */}
         <div className="flex-1 overflow-y-auto p-4 scrollbar-hide">
           <div className="text-[10px] text-[#444] font-semibold uppercase tracking-wider mb-3">
-            {search ? 'Paieškos rezultatai' : 'Šiandien vakare'}
+            Šiandien vakare
           </div>
-          {filtered.length === 0 && (
+          {loading && (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-sm text-[#444]">Kraunama...</div>
+            </div>
+          )}
+          {!loading && events.length === 0 && (
             <div className="text-sm text-[#444] text-center py-8">Nerasta renginių</div>
           )}
-          {filtered.map(ev => <EventCard key={ev.id} ev={ev} />)}
+          {!loading && events.map(ev => <EventCard key={ev.id} ev={ev} />)}
         </div>
       </div>
 
-      {/* ── MAP (both desktop and mobile) ── */}
+      {/* ── MAP ── */}
       <div className="flex-1 relative min-h-0">
         <MapContainer
           center={userPos}
@@ -155,7 +165,7 @@ export default function Arti() {
             className="map-dark"
           />
           <Marker position={userPos} icon={youIcon} />
-          {filtered.map(ev => (
+          {events.map(ev => (
             <Marker
               key={ev.id}
               position={[ev.lat, ev.lng]}
@@ -165,14 +175,14 @@ export default function Arti() {
               <Popup>
                 <div style={{background:'#111',padding:'8px',borderRadius:'8px',minWidth:'140px'}}>
                   <div style={{fontSize:'12px',fontWeight:600,color:'#fff',marginBottom:'3px'}}>{ev.name}</div>
-                  <div style={{fontSize:'10px',color:'#666'}}>{ev.meta}</div>
+                  <div style={{fontSize:'10px',color:'#666',marginBottom:'4px'}}>{ev.location}</div>
+                  <div style={{fontSize:'10px',color:'#4ade80',fontWeight:600}}>{ev.time_label}</div>
                 </div>
               </Popup>
             </Marker>
           ))}
         </MapContainer>
 
-        {/* Clock badge — mobile only */}
         <div className="md:hidden absolute top-3 right-3 z-[999] bg-[#0f0f0f]/90 border border-[#2a2a2a] rounded-lg px-2 py-1 text-[11px] text-[#4ade80] font-semibold">
           <i className="ti ti-clock text-[10px]"></i> {clock}
         </div>
@@ -180,12 +190,7 @@ export default function Arti() {
 
       {/* ── MOBILE event list ── */}
       <div className="md:hidden bg-[#0f0f0f] border-t border-[#1a1a1a] max-h-52 overflow-y-auto flex-shrink-0 px-3 py-2 pb-20">
-        <div className="text-[10px] text-[#444] font-semibold uppercase tracking-wider mb-2">
-          {search ? 'Paieškos rezultatai' : 'Šiandien vakare'}
-        </div>
-
-        {/* Mobile search */}
-        <div className="flex items-center gap-2 bg-[#1a1a1a] border border-[#252525] rounded-xl px-3 py-2 mb-3 focus-within:border-[#4ade80] transition-colors">
+        <div className="flex items-center gap-2 bg-[#1a1a1a] border border-[#252525] rounded-xl px-3 py-2 mb-2 focus-within:border-[#4ade80] transition-colors">
           <i className="ti ti-search text-[#555] text-sm"></i>
           <input
             type="text"
@@ -195,8 +200,6 @@ export default function Arti() {
             className="bg-transparent outline-none text-xs text-white flex-1 placeholder-[#444]"
           />
         </div>
-
-        {/* Mobile filters */}
         <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2 mb-2">
           {chips.map(c => (
             <button key={c} onClick={() => setFilter(c)}
@@ -207,11 +210,8 @@ export default function Arti() {
             </button>
           ))}
         </div>
-
-        {filtered.length === 0 && (
-          <div className="text-xs text-[#444] text-center py-4">Nerasta renginių</div>
-        )}
-        {filtered.map(ev => <EventCard key={ev.id} ev={ev} />)}
+        {loading && <div className="text-xs text-[#444] text-center py-4">Kraunama...</div>}
+        {!loading && events.map(ev => <EventCard key={ev.id} ev={ev} />)}
       </div>
 
     </div>
