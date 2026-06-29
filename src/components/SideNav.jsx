@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 
 const tabs = [
   { to: '/',          icon: 'ti-map-pin',     label: 'Arti' },
@@ -9,6 +10,8 @@ const tabs = [
 ]
 
 export default function SideNav() {
+  const { user } = useAuth()
+
   return (
     <aside className="hidden md:flex flex-col w-64 bg-[#0a0a0a] border-r border-[#1a1a1a] p-4 flex-shrink-0">
       {/* Logo */}
@@ -37,19 +40,22 @@ export default function SideNav() {
         ))}
       </nav>
 
-      {/* Bottom of sidebar */}
-      <div className="border-t border-[#1a1a1a] pt-4 mt-4">
-        <div className="flex items-center gap-3 px-3 py-2">
-          <div className="w-8 h-8 rounded-full bg-[#1a2a1a] border border-[#4ade80] flex items-center justify-center text-[#4ade80] font-bold text-sm">
-            K
-          </div>
-          <div>
-            <div className="text-xs font-semibold text-white">Karolis</div>
-            <div className="text-[10px] text-[#555]">Kaunas</div>
+      {/* Bottom of sidebar — only show when logged in */}
+      {user && (
+        <div className="border-t border-[#1a1a1a] pt-4 mt-4">
+          <div className="flex items-center gap-3 px-3 py-2">
+            <div className="w-8 h-8 rounded-full bg-[#1a2a1a] border border-[#4ade80] flex items-center justify-center text-[#4ade80] font-bold text-sm">
+              {user.name.charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <div className="text-xs font-semibold text-white">{user.name}</div>
+              <div className="text-[10px] text-[#555]">Kaunas</div>
+            </div>
           </div>
         </div>
-        <div className="text-[10px] text-[#2a2a2a] text-center mt-3">eikten.lt · v0.1 beta</div>
-      </div>
+      )}
+
+      <div className="text-[10px] text-[#2a2a2a] text-center mt-3">eikten.lt · v0.1 beta</div>
     </aside>
   )
 }
