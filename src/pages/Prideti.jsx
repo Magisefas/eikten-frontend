@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 import api from '../api'
 
 const categories = [
@@ -20,22 +22,23 @@ const colors = {
 }
 
 export default function Prideti() {
-  const [name, setName]         = useState('')
-  const [location, setLocation] = useState('')
-  const [date, setDate]         = useState('')
-  const [time, setTime]         = useState('')
-  const [desc, setDesc]         = useState('')
-  const [contact, setContact]   = useState('')
-  const [price, setPrice]       = useState('')
-  const [isFree, setIsFree]     = useState(true)
-  const [cats, setCats]         = useState([])
-  const [success, setSuccess]   = useState(false)
-  const [loading, setLoading]   = useState(false)
-  const [error, setError]       = useState('')
+  const { user }                        = useAuth()
+  const navigate                        = useNavigate()
+  const [name, setName]                 = useState('')
+  const [location, setLocation]         = useState('')
+  const [date, setDate]                 = useState('')
+  const [time, setTime]                 = useState('')
+  const [desc, setDesc]                 = useState('')
+  const [contact, setContact]           = useState('')
+  const [price, setPrice]               = useState('')
+  const [isFree, setIsFree]             = useState(true)
+  const [cats, setCats]                 = useState([])
+  const [success, setSuccess]           = useState(false)
+  const [loading, setLoading]           = useState(false)
+  const [error, setError]               = useState('')
 
   const toggleCat = (id) => setCats(c => c.includes(id) ? c.filter(x=>x!==id) : [...c,id])
 
-  // Geocode location string to lat/lng using OpenStreetMap Nominatim (free)
   const geocode = async (locationStr) => {
     try {
       const query = encodeURIComponent(locationStr + ', Kaunas, Lithuania')
@@ -47,12 +50,18 @@ export default function Prideti() {
     } catch (err) {
       console.error('Geocoding failed:', err)
     }
-    // Default to Kaunas city centre if geocoding fails
     return { lat: 54.8985, lng: 23.9280 }
   }
 
   const submit = async () => {
     setError('')
+
+    // Check if logged in
+    if (!user) {
+      navigate('/login')
+      return
+    }
+
     if (!name || !location || !date || !time) {
       setError('Prašome užpildyti visus privalomus laukus (*)')
       return
@@ -65,26 +74,23 @@ export default function Prideti() {
     setLoading(true)
 
     try {
-      // Get coordinates for the location
       const coords = await geocode(location)
 
-      // Build the event data
       const eventData = {
         name,
         location,
         description: desc,
-        lat: coords.lat,
-        lng: coords.lng,
-        category: cats[0],
-        starts_at: `${date} ${time}:00`,
-        is_free: isFree,
-        price: isFree ? null : parseFloat(price),
-        color: colors[cats[0]] || '#4ade80',
+        lat:         coords.lat,
+        lng:         coords.lng,
+        category:    cats[0],
+        starts_at:   `${date} ${time}:00`,
+        is_free:     isFree,
+        price:       isFree ? null : parseFloat(price),
+        color:       colors[cats[0]] || '#4ade80',
         contact,
-        source: 'user',
+        source:      'user',
       }
 
-      // Save to Laravel API
       await api.post('/api/events', eventData)
       setSuccess(true)
 
@@ -111,7 +117,10 @@ export default function Prideti() {
         <div className="text-xl font-bold text-white mb-2">Renginys paskelbtas!</div>
         <div className="text-sm text-[#555]">Tavo renginys dabar matomas žemėlapyje</div>
       </div>
-      <button onClick={() => window.location.href='/'} className="bg-[#4ade80] text-[#0a0a0a] font-bold px-8 py-3 rounded-xl text-sm">
+      <button
+        onClick={() => window.location.href='/'}
+        className="bg-[#4ade80] text-[#0a0a0a] font-bold px-8 py-3 rounded-xl text-sm"
+      >
         Žiūrėti žemėlapyje
       </button>
       <button onClick={reset} className="text-sm text-[#555] hover:text-[#888]">
@@ -134,6 +143,19 @@ export default function Prideti() {
 
       <div className="flex-1 overflow-y-auto px-4 md:px-6 py-4 scrollbar-hide pb-24 md:pb-6">
         <div className="max-w-xl mx-auto flex flex-col gap-5">
+
+          {/* Not logged in banner */}
+          {!user && (
+            <div className="bg-[#1a1a0d] border border-[#fbbf24]/30 rounded-xl px-4 py-3 text-sm text-[#fbbf24] flex items-center justify-between">
+              <span>Prisijunk kad galėtum skelbti renginius</span>
+              <button
+                onClick={() => navigate('/login')}
+                className="bg-[#fbbf24] text-[#0a0a0a] font-bold px-3 py-1 rounded-lg text-xs ml-3 flex-shrink-0"
+              >
+                Prisijungti
+              </button>
+            </div>
+          )}
 
           {/* Error message */}
           {error && (
@@ -198,7 +220,9 @@ export default function Prideti() {
           {/* Date and Time */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-[10px] text-[#555] font-semibold uppercase tracking-wider block mb-2">Data *</label>
+              <label className="text-[10px] text-[#555] font-semibold uppercase tracking-wider block mb-2">
+                Data *
+              </label>
               <input
                 type="date"
                 value={date}
@@ -208,7 +232,9 @@ export default function Prideti() {
               />
             </div>
             <div>
-              <label className="text-[10px] text-[#555] font-semibold uppercase tracking-wider block mb-2">Laikas *</label>
+              <label className="text-[10px] text-[#555] font-semibold uppercase tracking-wider block mb-2">
+                Laikas *
+              </label>
               <input
                 type="time"
                 value={time}
@@ -221,7 +247,9 @@ export default function Prideti() {
 
           {/* Description */}
           <div>
-            <label className="text-[10px] text-[#555] font-semibold uppercase tracking-wider block mb-2">Aprašymas</label>
+            <label className="text-[10px] text-[#555] font-semibold uppercase tracking-wider block mb-2">
+              Aprašymas
+            </label>
             <textarea
               value={desc}
               onChange={e => setDesc(e.target.value)}
@@ -247,7 +275,9 @@ export default function Prideti() {
           {/* Price */}
           {!isFree && (
             <div>
-              <label className="text-[10px] text-[#555] font-semibold uppercase tracking-wider block mb-2">Kaina (€)</label>
+              <label className="text-[10px] text-[#555] font-semibold uppercase tracking-wider block mb-2">
+                Kaina (€)
+              </label>
               <input
                 type="number"
                 value={price}
@@ -261,7 +291,9 @@ export default function Prideti() {
 
           {/* Contact */}
           <div>
-            <label className="text-[10px] text-[#555] font-semibold uppercase tracking-wider block mb-2">Kontaktai (neprivaloma)</label>
+            <label className="text-[10px] text-[#555] font-semibold uppercase tracking-wider block mb-2">
+              Kontaktai (neprivaloma)
+            </label>
             <input
               type="text"
               value={contact}
@@ -287,6 +319,7 @@ export default function Prideti() {
           <div className="h-4"></div>
         </div>
       </div>
+
     </div>
   )
 }
