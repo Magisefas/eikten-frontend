@@ -1,16 +1,12 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import api from '../api'
-
-const badgeStyle = {
-  Dabar:  'bg-[#2a1212] text-[#f87171]',
-  soon:   'bg-[#261f08] text-[#fbbf24]',
-  later:  'bg-[#0d1f0d] text-[#4ade80]',
-}
 
 const chips = ['all','Muzika','Maistas','Sportas','Kultūra','Nemokama']
 const sorts = ['Atstumas','Prasideda','Nemokama','Populiaru']
 
 export default function Visi() {
+  const navigate = useNavigate()
   const [events, setEvents]   = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch]   = useState('')
@@ -37,7 +33,10 @@ export default function Visi() {
     fetchEvents()
   }, [filter, search])
 
-  const toggleLike = (id) => setLiked(l => l.includes(id) ? l.filter(x=>x!==id) : [...l,id])
+  const toggleLike = (id, e) => {
+    e.stopPropagation()
+    setLiked(l => l.includes(id) ? l.filter(x=>x!==id) : [...l,id])
+  }
 
   const getBadgeStyle = (timeLabel) => {
     if (timeLabel === 'Dabar') return 'bg-[#2a1212] text-[#f87171]'
@@ -46,7 +45,10 @@ export default function Visi() {
   }
 
   const EventRow = ({ ev }) => (
-    <div className="flex gap-3 items-start bg-[#161616] border border-[#222] hover:border-[#4ade80] rounded-xl p-3 mb-2 cursor-pointer transition-colors">
+    <div
+      onClick={() => navigate(`/event/${ev.id}`)}
+      className="flex gap-3 items-start bg-[#161616] border border-[#222] hover:border-[#4ade80] rounded-xl p-3 mb-2 cursor-pointer transition-colors"
+    >
       <div className="w-0.5 rounded self-stretch flex-shrink-0" style={{background:ev.color}}></div>
       <div className="flex-1 min-w-0">
         <div className="text-sm font-semibold text-white">{ev.name}</div>
@@ -71,7 +73,7 @@ export default function Visi() {
             <i className="ti ti-users text-[10px]"></i> {ev.going_count}
           </span>
           <button
-            onClick={() => toggleLike(ev.id)}
+            onClick={(e) => toggleLike(ev.id, e)}
             className={`text-base transition-colors ${liked.includes(ev.id) ? 'text-[#f87171]' : 'text-[#333] hover:text-[#666]'}`}
           >
             <i className={`ti ${liked.includes(ev.id) ? 'ti-heart-filled' : 'ti-heart'}`}></i>
@@ -84,7 +86,6 @@ export default function Visi() {
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
 
-      {/* Top bar */}
       <div className="bg-[#0f0f0f] px-4 md:px-6 pt-10 md:pt-6 pb-3 border-b border-[#1a1a1a] flex-shrink-0">
         <div className="flex items-center justify-between mb-4">
           <div>
@@ -137,7 +138,6 @@ export default function Visi() {
         </div>
       </div>
 
-      {/* Event list */}
       <div className="flex-1 overflow-y-auto px-4 md:px-6 py-4 scrollbar-hide pb-24 md:pb-4">
 
         {loading && (

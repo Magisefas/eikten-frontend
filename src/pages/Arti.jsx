@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -26,6 +27,7 @@ const youIcon = L.divIcon({
 })
 
 export default function Arti() {
+  const navigate = useNavigate()
   const [events, setEvents]     = useState([])
   const [loading, setLoading]   = useState(true)
   const [userPos, setUserPos]   = useState([54.8985, 23.9280])
@@ -36,7 +38,6 @@ export default function Arti() {
   const now = new Date()
   const clock = String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')
 
-  // Fetch events from Laravel API
   useEffect(() => {
     const fetchEvents = async () => {
       try {
@@ -55,7 +56,6 @@ export default function Arti() {
     fetchEvents()
   }, [filter, search])
 
-  // Get user location
   useEffect(() => {
     navigator.geolocation?.getCurrentPosition(p => {
       setUserPos([p.coords.latitude, p.coords.longitude])
@@ -67,7 +67,7 @@ export default function Arti() {
 
   const EventCard = ({ ev }) => (
     <div
-      onClick={() => setSelected(ev.id)}
+      onClick={() => navigate(`/event/${ev.id}`)}
       className={`flex gap-3 items-start bg-[#161616] rounded-xl p-3 mb-2 cursor-pointer border transition-colors hover:border-[#4ade80] ${
         selected===ev.id ? 'border-[#4ade80]' : 'border-[#222]'
       }`}
@@ -176,7 +176,10 @@ export default function Arti() {
                 <div style={{background:'#111',padding:'8px',borderRadius:'8px',minWidth:'140px'}}>
                   <div style={{fontSize:'12px',fontWeight:600,color:'#fff',marginBottom:'3px'}}>{ev.name}</div>
                   <div style={{fontSize:'10px',color:'#666',marginBottom:'4px'}}>{ev.location}</div>
-                  <div style={{fontSize:'10px',color:'#4ade80',fontWeight:600}}>{ev.time_label}</div>
+                  <div style={{fontSize:'10px',color:'#4ade80',fontWeight:600,marginBottom:'6px'}}>{ev.time_label}</div>
+                  <a href={`/event/${ev.id}`} style={{fontSize:'10px',color:'#4ade80',fontWeight:600,textDecoration:'underline'}}>
+                    Žiūrėti daugiau →
+                  </a>
                 </div>
               </Popup>
             </Marker>
@@ -190,7 +193,11 @@ export default function Arti() {
 
       {/* ── MOBILE event list ── */}
       <div className="md:hidden bg-[#0f0f0f] border-t border-[#1a1a1a] max-h-52 overflow-y-auto flex-shrink-0 px-3 py-2 pb-20">
-        <div className="flex items-center gap-2 bg-[#1a1a1a] border border-[#252525] rounded-xl px-3 py-2 mb-2 focus-within:border-[#4ade80] transition-colors">
+        <div className="text-[10px] text-[#444] font-semibold uppercase tracking-wider mb-2">
+          {search ? 'Paieškos rezultatai' : 'Šiandien vakare'}
+        </div>
+
+        <div className="flex items-center gap-2 bg-[#1a1a1a] border border-[#252525] rounded-xl px-3 py-2 mb-3 focus-within:border-[#4ade80] transition-colors">
           <i className="ti ti-search text-[#555] text-sm"></i>
           <input
             type="text"
@@ -200,6 +207,7 @@ export default function Arti() {
             className="bg-transparent outline-none text-xs text-white flex-1 placeholder-[#444]"
           />
         </div>
+
         <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2 mb-2">
           {chips.map(c => (
             <button key={c} onClick={() => setFilter(c)}
@@ -210,7 +218,11 @@ export default function Arti() {
             </button>
           ))}
         </div>
+
         {loading && <div className="text-xs text-[#444] text-center py-4">Kraunama...</div>}
+        {!loading && events.length === 0 && (
+          <div className="text-xs text-[#444] text-center py-4">Nerasta renginių</div>
+        )}
         {!loading && events.map(ev => <EventCard key={ev.id} ev={ev} />)}
       </div>
 

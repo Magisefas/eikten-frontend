@@ -1,0 +1,189 @@
+import { useState, useEffect } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
+import { MapContainer, TileLayer, Marker } from 'react-leaflet'
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
+import { useAuth } from '../context/AuthContext'
+import api from '../api'
+
+function makeIcon(color) {
+  return L.divIcon({
+    className: '',
+    html: `<div style="width:20px;height:20px;border-radius:50%;background:${color};border:2px solid rgba(255,255,255,0.3);box-shadow:0 2px 8px rgba(0,0,0,0.5)"></div>`,
+    iconSize: [20,20], iconAnchor: [10,10],
+  })
+}
+
+export default function EventDetail() {
+  const { id }    = useParams()
+  const navigate  = useNavigate()
+  const { user }  = useAuth()
+  const [event, setEvent]     = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [saved, setSaved]     = useState(false)
+  const [going, setGoing]     = useState(false)
+  const [error, setError]     = useState('')
+
+  useEffect(() => {
+    setLoading(true)
+    api.get(`/api/events/${id}`)
+      .then(res => setEvent(res.data.data))
+      .catch(() => setError('Renginys nerastas'))
+      .finally(() => setLoading(false))
+  }, [id])
+
+  useEffect(() => {
+    if (user) {
+      api.get('/api/saved-events')
+        .then(res => setSaved(res.data.data.some(e => e.id === parseInt(id))))
+        .catch(() => {})
+    }
+  }, [user, id])
+
+  const toggleSave = async () => {
+    if (!user) { navigate('/login'); return }
+    try {
+      if (saved) {
+        await api.delete(`/api/saved-events/${id}`)
+        setSaved(false)
+      } else {
+        await api.post(`/api/saved-events/${id}`)
+        setSaved(true)
+      }
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  const toggleGoing = async () => {
+    if (!user) { navigate('/login'); return }
+    try {
+      const res = await api.post(`/api/events/${id}/going`)
+      setGoing(res.data.going)
+      setEvent(e => ({ ...e, going_count: res.data.going_count }))
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  const share = () => {
+    if (navigator.share) {
+      navigator.share({ title: event.name, text: event.location, url: window.location.href })
+    } else {
+      navigator.clipboard.writeText(window.location.href)
+      alert('Nuoroda nukopijuota!')
+    }
+  }
+
+  if (loading) return (
+    <div className="flex flex-col flex-1 items-center justify-center bg-[#0f0f0f]">
+      <div className="text-sm text-[#444]">Kraunama...</div>
+    </div>
+  )
+
+  if (error || !event) return (
+    <div className="flex flex-col flex-1 items-center justify-center gap-4 bg-[#0f0f0f] p-6">
+      <div className="text-sm text-[#555]">{error || 'Renginys nerastas'}</div>
+      <button onClick={() => navigate('/')} className="text-[#4ade80] text-sm">← Grįžti į žemėlapį</button>
+    </div>
+  )
+
+  return (
+    <div className="flex flex-col flex-1 overflow-hidden">
+
+      <div className="bg-[#0f0f0f] px-4 md:px-6 pt-10 md:pt-6 pb-3 border-b border-[#1a1a1a] flex-shrink-0 flex items-center gap-3">
+        <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-full bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center text-[#888] flex-shrink-0">
+          <i className="ti ti-arrow-left text-lg"></i>
+        </button>
+        <h1 className="text-base font-semibold text-white truncate">{event.name}</h1>
+      </div>
+
+      <div className="flex-1 overflow-y-auto scrollbar-hide pb-24 md:pb-6">
+        <div className="max-w-2xl mx-auto">
+
+          <div className="h-48 md:h-64 relative">
+            <MapContainer
+              center={[event.lat, event.lng]}
+              zoom={15}
+              className="w-full h-full"
+              zoomControl={false}
+              attributionControl={false}
+              dragging={false}
+              scrollWheelZoom={false}
+            >
+              <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" className="map-dark" />
+              <Marker position={[event.lat, event.lng]} icon={makeIcon(event.color)} />
+            </MapContainer>
+          </div>
+
+          <div className="px-4 md:px-6 py-5">
+
+            <div className="flex items-start justify-between gap-3 mb-4">
+              <div>
+                <h2 className="text-xl font-bold text-white mb-1">{event.name}</h2>
+                <div className="flex items-center gap-1 text-sm text-[#888]">
+                  <i className="ti ti-map-pin text-[#4ade80] text-sm"></i>
+                  {event.location}
+                </div>
+              </div>
+              <button onClick={share} className="w-9 h-9 rounded-full bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center text-[#888] flex-shrink-0">
+                <i className="ti ti-share text-base"></i>
+              </button>
+            </div>
+
+            <div className="flex gap-2 flex-wrap mb-5">
+              <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${
+                event.time_label==='Dabar' ? 'bg-[#2a1212] text-[#f87171]' :
+                event.time_label?.includes('min') ? 'bg-[#261f08] text-[#fbbf24]' :
+                'bg-[#0d1f0d] text-[#4ade80]'
+              }`}>{event.time_label}</span>
+              <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${
+                event.is_free ? 'bg-[#0d1f0d] text-[#4ade80]' : 'bg-[#1a1a0d] text-[#fbbf24]'
+              }`}>{event.is_free ? 'Nemokama' : `€${event.price}`}</span>
+              <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-[#1a1a2a] text-[#a78bfa]">{event.category}</span>
+            </div>
+
+            {event.description && (
+              <div className="mb-5">
+                <div className="text-[10px] text-[#444] font-semibold uppercase tracking-wider mb-2">Aprašymas</div>
+                <p className="text-sm text-[#ccc] leading-relaxed">{event.description}</p>
+              </div>
+            )}
+
+            <div className="flex items-center gap-2 mb-5 text-sm text-[#888]">
+              <i className="ti ti-users text-[#4ade80]"></i>
+              <span><strong className="text-white">{event.going_count}</strong> žmonės eina</span>
+            </div>
+
+            {event.contact && (
+              <div className="mb-5">
+                <div className="text-[10px] text-[#444] font-semibold uppercase tracking-wider mb-2">Kontaktai</div>
+                <div className="text-sm text-[#ccc]">{event.contact}</div>
+              </div>
+            )}
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={toggleGoing}
+                className={`flex-1 font-bold py-3 rounded-xl text-sm transition-colors ${
+                  going ? 'bg-[#0d1f0d] text-[#4ade80] border border-[#4ade80]' : 'bg-[#4ade80] text-[#0a0a0a]'
+                }`}
+              >
+                {going ? '✓ Einu' : 'Einu'}
+              </button>
+              <button
+                onClick={toggleSave}
+                className={`w-12 h-12 rounded-xl border flex items-center justify-center flex-shrink-0 transition-colors ${
+                  saved ? 'bg-[#2a1212] border-[#f87171] text-[#f87171]' : 'bg-[#1a1a1a] border-[#2a2a2a] text-[#888]'
+                }`}
+              >
+                <i className={`ti ${saved ? 'ti-heart-filled' : 'ti-heart'} text-lg`}></i>
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}

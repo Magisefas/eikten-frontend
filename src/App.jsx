@@ -7,6 +7,7 @@ import Issaugoti from './pages/Issaugoti'
 import Profilis from './pages/Profilis'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import EventDetail from './pages/EventDetail'
 import Layout from './components/Layout'
 
 function App() {
@@ -21,6 +22,7 @@ function App() {
           <Route path="prideti"   element={<Prideti />} />
           <Route path="issaugoti" element={<Issaugoti />} />
           <Route path="profilis"  element={<Profilis />} />
+          <Route path="event/:id" element={<EventDetail />} />
         </Route>
       </Routes>
     </AuthProvider>
