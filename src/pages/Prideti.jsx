@@ -56,7 +56,6 @@ export default function Prideti() {
   const submit = async () => {
     setError('')
 
-    // Check if logged in
     if (!user) {
       navigate('/login')
       return
@@ -95,8 +94,11 @@ export default function Prideti() {
       setSuccess(true)
 
     } catch (err) {
-      console.error('Failed to save event:', err)
-      setError('Nepavyko išsaugoti renginio. Bandykite dar kartą.')
+      if (err.response?.status === 429) {
+        setError(err.response.data.message)
+      } else {
+        setError('Nepavyko išsaugoti renginio. Bandykite dar kartą.')
+      }
     } finally {
       setLoading(false)
     }
@@ -319,7 +321,6 @@ export default function Prideti() {
           <div className="h-4"></div>
         </div>
       </div>
-
     </div>
   )
 }

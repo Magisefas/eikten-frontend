@@ -75,6 +75,17 @@ export default function EventDetail() {
     }
   }
 
+  const report = async () => {
+    if (!user) { navigate('/login'); return }
+    if (!window.confirm('Pranešti apie šį renginį?')) return
+    try {
+      await api.post(`/api/events/${id}/report`, { reason: 'Inappropriate content' })
+      alert('Ačiū! Pranešimas gautas.')
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
   if (loading) return (
     <div className="flex flex-col flex-1 items-center justify-center bg-[#0f0f0f]">
       <div className="text-sm text-[#444]">Kraunama...</div>
@@ -91,11 +102,21 @@ export default function EventDetail() {
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
 
-      <div className="bg-[#0f0f0f] px-4 md:px-6 pt-10 md:pt-6 pb-3 border-b border-[#1a1a1a] flex-shrink-0 flex items-center gap-3">
-        <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-full bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center text-[#888] flex-shrink-0">
-          <i className="ti ti-arrow-left text-lg"></i>
-        </button>
-        <h1 className="text-base font-semibold text-white truncate">{event.name}</h1>
+      <div className="bg-[#0f0f0f] px-4 md:px-6 pt-10 md:pt-6 pb-3 border-b border-[#1a1a1a] flex-shrink-0 flex items-center justify-between">
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-full bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center text-[#888] flex-shrink-0">
+            <i className="ti ti-arrow-left text-lg"></i>
+          </button>
+          <h1 className="text-base font-semibold text-white truncate">{event.name}</h1>
+        </div>
+        <div className="flex gap-2 flex-shrink-0 ml-2">
+          <button onClick={share} className="w-9 h-9 rounded-full bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center text-[#888] hover:border-[#4ade80] hover:text-[#4ade80] transition-colors">
+            <i className="ti ti-share text-base"></i>
+          </button>
+          <button onClick={report} className="w-9 h-9 rounded-full bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center text-[#888] hover:border-[#f87171] hover:text-[#f87171] transition-colors">
+            <i className="ti ti-flag text-base"></i>
+          </button>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto scrollbar-hide pb-24 md:pb-6">
@@ -118,17 +139,12 @@ export default function EventDetail() {
 
           <div className="px-4 md:px-6 py-5">
 
-            <div className="flex items-start justify-between gap-3 mb-4">
-              <div>
-                <h2 className="text-xl font-bold text-white mb-1">{event.name}</h2>
-                <div className="flex items-center gap-1 text-sm text-[#888]">
-                  <i className="ti ti-map-pin text-[#4ade80] text-sm"></i>
-                  {event.location}
-                </div>
+            <div className="mb-4">
+              <h2 className="text-xl font-bold text-white mb-1">{event.name}</h2>
+              <div className="flex items-center gap-1 text-sm text-[#888]">
+                <i className="ti ti-map-pin text-[#4ade80] text-sm"></i>
+                {event.location}
               </div>
-              <button onClick={share} className="w-9 h-9 rounded-full bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center text-[#888] flex-shrink-0">
-                <i className="ti ti-share text-base"></i>
-              </button>
             </div>
 
             <div className="flex gap-2 flex-wrap mb-5">
@@ -166,7 +182,9 @@ export default function EventDetail() {
               <button
                 onClick={toggleGoing}
                 className={`flex-1 font-bold py-3 rounded-xl text-sm transition-colors ${
-                  going ? 'bg-[#0d1f0d] text-[#4ade80] border border-[#4ade80]' : 'bg-[#4ade80] text-[#0a0a0a]'
+                  going
+                    ? 'bg-[#0d1f0d] text-[#4ade80] border border-[#4ade80]'
+                    : 'bg-[#4ade80] text-[#0a0a0a]'
                 }`}
               >
                 {going ? '✓ Einu' : 'Einu'}
@@ -174,7 +192,9 @@ export default function EventDetail() {
               <button
                 onClick={toggleSave}
                 className={`w-12 h-12 rounded-xl border flex items-center justify-center flex-shrink-0 transition-colors ${
-                  saved ? 'bg-[#2a1212] border-[#f87171] text-[#f87171]' : 'bg-[#1a1a1a] border-[#2a2a2a] text-[#888]'
+                  saved
+                    ? 'bg-[#2a1212] border-[#f87171] text-[#f87171]'
+                    : 'bg-[#1a1a1a] border-[#2a2a2a] text-[#888] hover:border-[#f87171]'
                 }`}
               >
                 <i className={`ti ${saved ? 'ti-heart-filled' : 'ti-heart'} text-lg`}></i>
