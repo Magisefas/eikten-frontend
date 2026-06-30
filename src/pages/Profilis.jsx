@@ -117,7 +117,7 @@ export default function Profilis() {
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-3 rounded-xl overflow-hidden border border-[#1a1a1a]">
+            <div className="grid grid-cols-3 rounded-xl overflow-hidden border border-[#1a1a1a] mb-5">
               {[
                 [myEvents.length.toString(), 'Pridėta'],
                 ['0', 'Išsaugota'],
@@ -168,18 +168,29 @@ export default function Profilis() {
               {!loadingEvents && myEvents.map(ev => (
                 <div key={ev.id} className="flex gap-3 items-start bg-[#161616] border border-[#222] rounded-xl p-3 mb-2">
                   <div className="w-0.5 rounded self-stretch flex-shrink-0" style={{background:ev.color}}></div>
-                  <div className="flex-1 min-w-0">
+                  <div
+                    className="flex-1 min-w-0 cursor-pointer"
+                    onClick={() => navigate(`/event/${ev.id}`)}
+                  >
                     <div className="text-sm font-semibold text-white truncate">{ev.name}</div>
                     <div className="text-xs text-[#555] mt-0.5">{ev.location}</div>
                     <div className="text-[9px] text-[#444] mt-1">{ev.time_label}</div>
                   </div>
-                  <button
-                    onClick={() => deleteEvent(ev.id)}
-                    disabled={deleting === ev.id}
-                    className="text-[#333] hover:text-[#f87171] transition-colors ml-1 flex-shrink-0"
-                  >
-                    <i className={`ti ${deleting===ev.id ? 'ti-loader animate-spin' : 'ti-trash'} text-base`}></i>
-                  </button>
+                  <div className="flex gap-2 flex-shrink-0">
+                    <button
+                      onClick={() => navigate(`/event/${ev.id}/edit`)}
+                      className="text-[#333] hover:text-[#4ade80] transition-colors"
+                    >
+                      <i className="ti ti-pencil text-base"></i>
+                    </button>
+                    <button
+                      onClick={() => deleteEvent(ev.id)}
+                      disabled={deleting === ev.id}
+                      className="text-[#333] hover:text-[#f87171] transition-colors"
+                    >
+                      <i className={`ti ${deleting===ev.id ? 'ti-loader animate-spin' : 'ti-trash'} text-base`}></i>
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
