@@ -54,11 +54,13 @@ export default function Visi() {
         <div className="text-sm font-semibold text-white">{ev.name}</div>
         <div className="text-xs text-[#555] mt-0.5 mb-2">{ev.location}</div>
         <div className="flex gap-1.5 flex-wrap">
-          <span className={`text-[9px] px-1.5 py-0.5 rounded font-medium ${
-            ev.is_free ? 'bg-[#0d1f0d] text-[#4ade80]' : 'bg-[#1a1a0d] text-[#fbbf24]'
-          }`}>
-            {ev.is_free ? 'Nemokama' : `€${ev.price}`}
-          </span>
+          {ev.source !== 'kaunaspilnasrenginiu' && (
+        <span className={`text-[9px] px-1.5 py-0.5 rounded font-medium ${
+          ev.is_free ? 'bg-[#0d1f0d] text-[#4ade80]' : 'bg-[#1a1a0d] text-[#fbbf24]'
+        }`}>
+          {ev.is_free ? 'Nemokama' : `€${ev.price}`}
+        </span>
+      )}
           <span className="text-[9px] px-1.5 py-0.5 rounded font-medium bg-[#1a1a2a] text-[#a78bfa]">
             {ev.category}
           </span>

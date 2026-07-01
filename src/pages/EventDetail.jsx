@@ -175,13 +175,18 @@ export default function EventDetail() {
               }`}>
                 {event.time_label}
               </span>
-              <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${
-                event.is_free
-                  ? 'bg-[#0d1f0d] text-[#4ade80]'
-                  : 'bg-[#1a1a0d] text-[#fbbf24]'
-              }`}>
-                {event.is_free ? 'Nemokama' : `${event.price} EUR`}
-              </span>
+
+              {/* Only show free/paid for user posted events */}
+              {event.source !== 'kaunaspilnasrenginiu' && (
+                <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${
+                  event.is_free
+                    ? 'bg-[#0d1f0d] text-[#4ade80]'
+                    : 'bg-[#1a1a0d] text-[#fbbf24]'
+                }`}>
+                  {event.is_free ? 'Nemokama' : `${event.price} EUR`}
+                </span>
+              )}
+
               <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-[#1a1a2a] text-[#a78bfa]">
                 {event.category}
               </span>
@@ -218,8 +223,21 @@ export default function EventDetail() {
             {/* Action buttons */}
             <div className="flex gap-3 mt-6">
 
-              {/* Ticket button */}
-              {!event.is_free && event.ticket_url && (
+              {/* For scraped events — link to original page */}
+              {event.source === 'kaunaspilnasrenginiu' && event.ticket_url && (
+                <a
+                  href={event.ticket_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 font-bold py-3 rounded-xl text-sm text-center bg-[#1a1a1a] border border-[#2a2a2a] text-[#888] hover:border-[#4ade80] hover:text-[#4ade80] transition-colors flex items-center justify-center gap-2"
+                >
+                  <span>Daugiau info</span>
+                  <i className="ti ti-external-link text-sm"></i>
+                </a>
+              )}
+
+              {/* For paid user events — show ticket button */}
+              {event.source !== 'kaunaspilnasrenginiu' && !event.is_free && event.ticket_url && (
                 <a
                   href={event.ticket_url}
                   target="_blank"
