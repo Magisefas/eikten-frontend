@@ -95,25 +95,37 @@ export default function EventDetail() {
   if (error || !event) return (
     <div className="flex flex-col flex-1 items-center justify-center gap-4 bg-[#0f0f0f] p-6">
       <div className="text-sm text-[#555]">{error || 'Renginys nerastas'}</div>
-      <button onClick={() => navigate('/')} className="text-[#4ade80] text-sm">← Grįžti į žemėlapį</button>
+      <button onClick={() => navigate('/')} className="text-[#4ade80] text-sm">
+        Grizti i zemėlapį
+      </button>
     </div>
   )
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
 
+      {/* Header */}
       <div className="bg-[#0f0f0f] px-4 md:px-6 pt-10 md:pt-6 pb-3 border-b border-[#1a1a1a] flex-shrink-0 flex items-center justify-between">
         <div className="flex items-center gap-3 flex-1 min-w-0">
-          <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-full bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center text-[#888] flex-shrink-0">
+          <button
+            onClick={() => navigate(-1)}
+            className="w-9 h-9 rounded-full bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center text-[#888] flex-shrink-0"
+          >
             <i className="ti ti-arrow-left text-lg"></i>
           </button>
           <h1 className="text-base font-semibold text-white truncate">{event.name}</h1>
         </div>
         <div className="flex gap-2 flex-shrink-0 ml-2">
-          <button onClick={share} className="w-9 h-9 rounded-full bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center text-[#888] hover:border-[#4ade80] hover:text-[#4ade80] transition-colors">
+          <button
+            onClick={share}
+            className="w-9 h-9 rounded-full bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center text-[#888] hover:border-[#4ade80] hover:text-[#4ade80] transition-colors"
+          >
             <i className="ti ti-share text-base"></i>
           </button>
-          <button onClick={report} className="w-9 h-9 rounded-full bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center text-[#888] hover:border-[#f87171] hover:text-[#f87171] transition-colors">
+          <button
+            onClick={report}
+            className="w-9 h-9 rounded-full bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center text-[#888] hover:border-[#f87171] hover:text-[#f87171] transition-colors"
+          >
             <i className="ti ti-flag text-base"></i>
           </button>
         </div>
@@ -122,6 +134,7 @@ export default function EventDetail() {
       <div className="flex-1 overflow-y-auto scrollbar-hide pb-24 md:pb-6">
         <div className="max-w-2xl mx-auto">
 
+          {/* Mini map */}
           <div className="h-48 md:h-64 relative">
             <MapContainer
               center={[event.lat, event.lng]}
@@ -132,53 +145,93 @@ export default function EventDetail() {
               dragging={false}
               scrollWheelZoom={false}
             >
-              <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" className="map-dark" />
+              <TileLayer
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                className="map-dark"
+              />
               <Marker position={[event.lat, event.lng]} icon={makeIcon(event.color)} />
             </MapContainer>
           </div>
 
           <div className="px-4 md:px-6 py-5">
 
+            {/* Title */}
             <div className="mb-4">
               <h2 className="text-xl font-bold text-white mb-1">{event.name}</h2>
               <div className="flex items-center gap-1 text-sm text-[#888]">
                 <i className="ti ti-map-pin text-[#4ade80] text-sm"></i>
-                {event.location}
+                <span>{event.location}</span>
               </div>
             </div>
 
+            {/* Tags */}
             <div className="flex gap-2 flex-wrap mb-5">
               <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${
-                event.time_label==='Dabar' ? 'bg-[#2a1212] text-[#f87171]' :
-                event.time_label?.includes('min') ? 'bg-[#261f08] text-[#fbbf24]' :
-                'bg-[#0d1f0d] text-[#4ade80]'
-              }`}>{event.time_label}</span>
+                event.time_label === 'Dabar'
+                  ? 'bg-[#2a1212] text-[#f87171]'
+                  : event.time_label?.includes('min')
+                  ? 'bg-[#261f08] text-[#fbbf24]'
+                  : 'bg-[#0d1f0d] text-[#4ade80]'
+              }`}>
+                {event.time_label}
+              </span>
               <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${
-                event.is_free ? 'bg-[#0d1f0d] text-[#4ade80]' : 'bg-[#1a1a0d] text-[#fbbf24]'
-              }`}>{event.is_free ? 'Nemokama' : `€${event.price}`}</span>
-              <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-[#1a1a2a] text-[#a78bfa]">{event.category}</span>
+                event.is_free
+                  ? 'bg-[#0d1f0d] text-[#4ade80]'
+                  : 'bg-[#1a1a0d] text-[#fbbf24]'
+              }`}>
+                {event.is_free ? 'Nemokama' : `${event.price} EUR`}
+              </span>
+              <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-[#1a1a2a] text-[#a78bfa]">
+                {event.category}
+              </span>
             </div>
 
+            {/* Description */}
             {event.description && (
               <div className="mb-5">
-                <div className="text-[10px] text-[#444] font-semibold uppercase tracking-wider mb-2">Aprašymas</div>
+                <div className="text-[10px] text-[#444] font-semibold uppercase tracking-wider mb-2">
+                  Aprašymas
+                </div>
                 <p className="text-sm text-[#ccc] leading-relaxed">{event.description}</p>
               </div>
             )}
 
+            {/* Going count */}
             <div className="flex items-center gap-2 mb-5 text-sm text-[#888]">
               <i className="ti ti-users text-[#4ade80]"></i>
-              <span><strong className="text-white">{event.going_count}</strong> žmonės eina</span>
+              <span>
+                <strong className="text-white">{event.going_count}</strong> žmonės eina
+              </span>
             </div>
 
+            {/* Contact */}
             {event.contact && (
               <div className="mb-5">
-                <div className="text-[10px] text-[#444] font-semibold uppercase tracking-wider mb-2">Kontaktai</div>
+                <div className="text-[10px] text-[#444] font-semibold uppercase tracking-wider mb-2">
+                  Kontaktai
+                </div>
                 <div className="text-sm text-[#ccc]">{event.contact}</div>
               </div>
             )}
 
+            {/* Action buttons */}
             <div className="flex gap-3 mt-6">
+
+              {/* Ticket button */}
+              {!event.is_free && event.ticket_url && (
+                <a
+                  href={event.ticket_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 font-bold py-3 rounded-xl text-sm text-center bg-[#fbbf24] text-[#0a0a0a] hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+                >
+                  <span>Pirkti bilietą</span>
+                  <i className="ti ti-arrow-right text-sm"></i>
+                </a>
+              )}
+
+              {/* Going button */}
               <button
                 onClick={toggleGoing}
                 className={`flex-1 font-bold py-3 rounded-xl text-sm transition-colors ${
@@ -189,6 +242,8 @@ export default function EventDetail() {
               >
                 {going ? '✓ Einu' : 'Einu'}
               </button>
+
+              {/* Save heart */}
               <button
                 onClick={toggleSave}
                 className={`w-12 h-12 rounded-xl border flex items-center justify-center flex-shrink-0 transition-colors ${
@@ -199,7 +254,22 @@ export default function EventDetail() {
               >
                 <i className={`ti ${saved ? 'ti-heart-filled' : 'ti-heart'} text-lg`}></i>
               </button>
+
             </div>
+
+            {/* Source link */}
+            {event.source === 'kaunaspilnasrenginiu' && (
+              <div className="mt-4 text-center">
+                <a
+                  href="https://kaunaspilnasrenginiu.lt"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[10px] text-[#333] hover:text-[#555] transition-colors"
+                >
+                  Šaltinis: kaunaspilnasrenginiu.lt
+                </a>
+              </div>
+            )}
 
           </div>
         </div>

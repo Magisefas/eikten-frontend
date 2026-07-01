@@ -41,7 +41,7 @@ export default function Arti() {
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        const params = {}
+        const params = { today_only: 1 }
         if (filter !== 'all') params.category = filter
         if (search) params.search = search
         const res = await api.get('/api/events', { params })
@@ -93,12 +93,12 @@ export default function Arti() {
   return (
     <div className="flex flex-col md:flex-row-reverse flex-1 overflow-hidden">
 
-      {/* ── LEFT PANEL (desktop only) ── */}
+      {/* Desktop panel */}
       <div className="hidden md:flex flex-col w-96 border-l border-[#1a1a1a] bg-[#0f0f0f] flex-shrink-0">
         <div className="px-5 pt-6 pb-4 border-b border-[#1a1a1a]">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="text-lg font-bold text-white">Renginiai šalia</h1>
+              <h1 className="text-lg font-bold text-white">Šiandien šalia</h1>
               <div className="flex items-center gap-1 mt-1">
                 <i className="ti ti-map-pin text-[#4ade80] text-xs"></i>
                 <span className="text-xs text-[#666]">
@@ -139,19 +139,15 @@ export default function Arti() {
           <div className="text-[10px] text-[#444] font-semibold uppercase tracking-wider mb-3">
             Šiandien vakare
           </div>
-          {loading && (
-            <div className="flex items-center justify-center py-12">
-              <div className="text-sm text-[#444]">Kraunama...</div>
-            </div>
-          )}
+          {loading && <div className="text-sm text-[#444] text-center py-8">Kraunama...</div>}
           {!loading && events.length === 0 && (
-            <div className="text-sm text-[#444] text-center py-8">Nerasta renginių</div>
+            <div className="text-sm text-[#444] text-center py-8">Šiandien renginių nerasta</div>
           )}
           {!loading && events.map(ev => <EventCard key={ev.id} ev={ev} />)}
         </div>
       </div>
 
-      {/* ── MAP ── */}
+      {/* Map */}
       <div className="flex-1 relative min-h-0">
         <MapContainer
           center={userPos}
@@ -191,12 +187,11 @@ export default function Arti() {
         </div>
       </div>
 
-      {/* ── MOBILE event list ── */}
+      {/* Mobile event list */}
       <div className="md:hidden bg-[#0f0f0f] border-t border-[#1a1a1a] max-h-52 overflow-y-auto flex-shrink-0 px-3 py-2 pb-20">
         <div className="text-[10px] text-[#444] font-semibold uppercase tracking-wider mb-2">
-          {search ? 'Paieškos rezultatai' : 'Šiandien vakare'}
+          Šiandien vakare
         </div>
-
         <div className="flex items-center gap-2 bg-[#1a1a1a] border border-[#252525] rounded-xl px-3 py-2 mb-3 focus-within:border-[#4ade80] transition-colors">
           <i className="ti ti-search text-[#555] text-sm"></i>
           <input
@@ -207,7 +202,6 @@ export default function Arti() {
             className="bg-transparent outline-none text-xs text-white flex-1 placeholder-[#444]"
           />
         </div>
-
         <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2 mb-2">
           {chips.map(c => (
             <button key={c} onClick={() => setFilter(c)}
@@ -218,10 +212,9 @@ export default function Arti() {
             </button>
           ))}
         </div>
-
         {loading && <div className="text-xs text-[#444] text-center py-4">Kraunama...</div>}
         {!loading && events.length === 0 && (
-          <div className="text-xs text-[#444] text-center py-4">Nerasta renginių</div>
+          <div className="text-xs text-[#444] text-center py-4">Šiandien renginių nerasta</div>
         )}
         {!loading && events.map(ev => <EventCard key={ev.id} ev={ev} />)}
       </div>
