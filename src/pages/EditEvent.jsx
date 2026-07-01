@@ -52,13 +52,12 @@ export default function EditEvent() {
         setIsFree(ev.is_free)
         setPrice(ev.price || '')
         setCats(ev.category ? [ev.category] : [])
-        if (ev.starts_at) {
-        const d = new Date(ev.starts_at)
-        // Use local time not UTC
-        const localDate = new Date(d.getTime() - d.getTimezoneOffset() * 60000)
-        setDate(localDate.toISOString().split('T')[0])
-        setTime(localDate.toISOString().slice(11,16))
-      }
+if (ev.starts_at) {
+  const d = new Date(ev.starts_at)
+  const localDate = new Date(d.getTime() - d.getTimezoneOffset() * 60000)
+  setDate(localDate.toISOString().split('T')[0])
+  setTime(localDate.toISOString().slice(11,16))
+}
       })
       .catch(() => setError('Renginys nerastas'))
       .finally(() => setLoading(false))
