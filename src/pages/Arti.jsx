@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import api from '../api'
@@ -26,11 +26,22 @@ const youIcon = L.divIcon({
   iconSize: [16,16], iconAnchor: [8,8],
 })
 
+// Component that moves the map when user location is found
+function MapCenterer({ position }) {
+  const map = useMap()
+  useEffect(() => {
+    if (position) {
+      map.setView(position, 15)
+    }
+  }, [position, map])
+  return null
+}
+
 export default function Arti() {
   const navigate = useNavigate()
   const [events, setEvents]     = useState([])
   const [loading, setLoading]   = useState(true)
-  const [userPos, setUserPos]   = useState([54.8985, 23.9280])
+  const [userPos, setUserPos]   = useState(null)
   const [located, setLocated]   = useState(false)
   const [selected, setSelected] = useState(null)
   const [search, setSearch]     = useState('')
@@ -57,10 +68,17 @@ export default function Arti() {
   }, [filter, search])
 
   useEffect(() => {
-    navigator.geolocation?.getCurrentPosition(p => {
-      setUserPos([p.coords.latitude, p.coords.longitude])
-      setLocated(true)
-    })
+    navigator.geolocation?.getCurrentPosition(
+      p => {
+        setUserPos([p.coords.latitude, p.coords.longitude])
+        setLocated(true)
+      },
+      () => {
+        // fallback to Kaunas center if location denied
+        setUserPos([54.8985, 23.9280])
+      },
+      { enableHighAccuracy: true, timeout: 8000 }
+    )
   }, [])
 
   const chips = ['all','Muzika','Maistas','Sportas','Kultūra','Nemokama']
@@ -84,11 +102,14 @@ export default function Arti() {
           'bg-[#0d1f0d] text-[#4ade80]'
         }`}>{ev.time_label}</span>
         <span className="text-[10px] text-[#4ade80] font-semibold">
-          {located ? fmtDist(haversine(userPos[0],userPos[1],ev.lat,ev.lng)) : '...'}
+          {located && userPos ? fmtDist(haversine(userPos[0],userPos[1],ev.lat,ev.lng)) : '...'}
         </span>
       </div>
     </div>
   )
+
+  // Default center while waiting for GPS
+  const mapCenter = userPos || [54.8985, 23.9280]
 
   return (
     <div className="flex flex-col md:flex-row-reverse flex-1 overflow-hidden">
@@ -102,7 +123,9 @@ export default function Arti() {
               <div className="flex items-center gap-1 mt-1">
                 <i className="ti ti-map-pin text-[#4ade80] text-xs"></i>
                 <span className="text-xs text-[#666]">
-                  {located ? `Vieta nustatyta · ${events.length} renginiai` : 'Nustatoma vieta...'}
+                  {located
+                    ? `Vieta nustatyta · ${events.length} renginiai`
+                    : 'Nustatoma vieta...'}
                 </span>
               </div>
             </div>
@@ -149,38 +172,48 @@ export default function Arti() {
 
       {/* Map */}
       <div className="flex-1 relative min-h-0">
-        <MapContainer
-          center={userPos}
-          zoom={14}
-          className="w-full h-full"
-          zoomControl={false}
-          attributionControl={false}
-        >
-          <TileLayer
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            className="map-dark"
-          />
-          <Marker position={userPos} icon={youIcon} />
-          {events.map(ev => (
-            <Marker
-              key={ev.id}
-              position={[ev.lat, ev.lng]}
-              icon={makeIcon(ev.color)}
-              eventHandlers={{ click: () => setSelected(ev.id) }}
-            >
-              <Popup>
-                <div style={{background:'#111',padding:'8px',borderRadius:'8px',minWidth:'140px'}}>
-                  <div style={{fontSize:'12px',fontWeight:600,color:'#fff',marginBottom:'3px'}}>{ev.name}</div>
-                  <div style={{fontSize:'10px',color:'#666',marginBottom:'4px'}}>{ev.location}</div>
-                  <div style={{fontSize:'10px',color:'#4ade80',fontWeight:600,marginBottom:'6px'}}>{ev.time_label}</div>
-                  <a href={`/event/${ev.id}`} style={{fontSize:'10px',color:'#4ade80',fontWeight:600,textDecoration:'underline'}}>
-                    Žiūrėti daugiau →
-                  </a>
-                </div>
-              </Popup>
-            </Marker>
-          ))}
-        </MapContainer>
+        {userPos && (
+          <MapContainer
+            center={mapCenter}
+            zoom={15}
+            className="w-full h-full"
+            zoomControl={false}
+            attributionControl={false}
+          >
+            <TileLayer
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              className="map-dark"
+            />
+            <MapCenterer position={userPos} />
+            <Marker position={userPos} icon={youIcon} />
+            {events.map(ev => (
+              <Marker
+                key={ev.id}
+                position={[ev.lat, ev.lng]}
+                icon={makeIcon(ev.color)}
+                eventHandlers={{ click: () => setSelected(ev.id) }}
+              >
+                <Popup>
+                  <div style={{background:'#111',padding:'8px',borderRadius:'8px',minWidth:'140px'}}>
+                    <div style={{fontSize:'12px',fontWeight:600,color:'#fff',marginBottom:'3px'}}>{ev.name}</div>
+                    <div style={{fontSize:'10px',color:'#666',marginBottom:'4px'}}>{ev.location}</div>
+                    <div style={{fontSize:'10px',color:'#4ade80',fontWeight:600,marginBottom:'6px'}}>{ev.time_label}</div>
+                    <a href={`/event/${ev.id}`} style={{fontSize:'10px',color:'#4ade80',fontWeight:600,textDecoration:'underline'}}>
+                      Ziureti daugiau
+                    </a>
+                  </div>
+                </Popup>
+              </Marker>
+            ))}
+          </MapContainer>
+        )}
+
+        {/* Loading state while waiting for GPS */}
+        {!userPos && (
+          <div className="w-full h-full bg-[#182018] flex items-center justify-center">
+            <div className="text-sm text-[#444]">Nustatoma vieta...</div>
+          </div>
+        )}
 
         <div className="md:hidden absolute top-3 right-3 z-[999] bg-[#0f0f0f]/90 border border-[#2a2a2a] rounded-lg px-2 py-1 text-[11px] text-[#4ade80] font-semibold">
           <i className="ti ti-clock text-[10px]"></i> {clock}

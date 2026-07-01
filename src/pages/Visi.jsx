@@ -1,26 +1,33 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { isToday, isTomorrow } from 'date-fns'
 import api from '../api'
 
-const chips = ['all','Muzika','Maistas','Sportas','Kultūra','Nemokama']
-const sorts = ['Atstumas','Prasideda','Nemokama','Populiaru']
+const chips = ['all','Muzika','Maistas','Sportas','Kultūra','Nemokama','Mokami']
+const sorts = ['Prasideda','Atstumas','Populiaru']
 
 export default function Visi() {
   const navigate = useNavigate()
-  const [events, setEvents]   = useState([])
-  const [loading, setLoading] = useState(true)
-  const [search, setSearch]   = useState('')
-  const [filter, setFilter]   = useState('all')
-  const [sort, setSort]       = useState('Prasideda')
+  const [events, setEvents]     = useState([])
+  const [loading, setLoading]   = useState(true)
+  const [search, setSearch]     = useState('')
+  const [filter, setFilter]     = useState('all')
+  const [sort, setSort]         = useState('Prasideda')
   const [sortOpen, setSortOpen] = useState(false)
-  const [liked, setLiked]     = useState([])
+  const [liked, setLiked]       = useState([])
 
   useEffect(() => {
     const fetchEvents = async () => {
       setLoading(true)
       try {
         const params = {}
-        if (filter !== 'all') params.category = filter
+        if (filter === 'Nemokama') {
+          params.category = 'Nemokama'
+        } else if (filter === 'Mokami') {
+          params.paid = 1
+        } else if (filter !== 'all') {
+          params.category = filter
+        }
         if (search) params.search = search
         const res = await api.get('/api/events', { params })
         setEvents(res.data.data)
@@ -44,6 +51,20 @@ export default function Visi() {
     return 'bg-[#0d1f0d] text-[#4ade80]'
   }
 
+  // Group events by day
+  const todayEvents    = events.filter(e => isToday(new Date(e.starts_at)))
+  const tomorrowEvents = events.filter(e => isTomorrow(new Date(e.starts_at)))
+  const laterEvents    = events.filter(e => {
+    const d = new Date(e.starts_at)
+    return !isToday(d) && !isTomorrow(d)
+  })
+
+  const groups = [
+    { label: 'Šiandien',  events: todayEvents    },
+    { label: 'Rytoj',     events: tomorrowEvents },
+    { label: 'Vėliau',    events: laterEvents    },
+  ].filter(g => g.events.length > 0)
+
   const EventRow = ({ ev }) => (
     <div
       onClick={() => navigate(`/event/${ev.id}`)}
@@ -55,12 +76,12 @@ export default function Visi() {
         <div className="text-xs text-[#555] mt-0.5 mb-2">{ev.location}</div>
         <div className="flex gap-1.5 flex-wrap">
           {ev.source !== 'kaunaspilnasrenginiu' && (
-        <span className={`text-[9px] px-1.5 py-0.5 rounded font-medium ${
-          ev.is_free ? 'bg-[#0d1f0d] text-[#4ade80]' : 'bg-[#1a1a0d] text-[#fbbf24]'
-        }`}>
-          {ev.is_free ? 'Nemokama' : `€${ev.price}`}
-        </span>
-      )}
+            <span className={`text-[9px] px-1.5 py-0.5 rounded font-medium ${
+              ev.is_free ? 'bg-[#0d1f0d] text-[#4ade80]' : 'bg-[#1a1a0d] text-[#fbbf24]'
+            }`}>
+              {ev.is_free ? 'Nemokama' : `€${ev.price}`}
+            </span>
+          )}
           <span className="text-[9px] px-1.5 py-0.5 rounded font-medium bg-[#1a1a2a] text-[#a78bfa]">
             {ev.category}
           </span>
@@ -92,7 +113,9 @@ export default function Visi() {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-xl font-bold text-white">Visi renginiai</h1>
-            <p className="text-xs text-[#555] mt-0.5">{loading ? 'Kraunama...' : `${events.length} renginiai šiandien`}</p>
+            <p className="text-xs text-[#555] mt-0.5">
+              {loading ? 'Kraunama...' : `${events.length} renginiai`}
+            </p>
           </div>
           <div className="relative">
             <button
@@ -154,17 +177,31 @@ export default function Visi() {
               <i className="ti ti-calendar-off text-2xl text-[#333]"></i>
             </div>
             <div className="text-sm text-[#555]">Nerasta renginių</div>
-            <div className="text-xs text-[#333] text-center">Pabandykite pakeisti filtrus arba paiešką</div>
+            <div className="text-xs text-[#333] text-center">Pabandykite pakeisti filtrus</div>
           </div>
         )}
 
         {!loading && events.length > 0 && (
-          <>
-            <div className="text-[10px] text-[#444] font-semibold uppercase tracking-wider mb-3">
-              Šiandien ir artimiausiu metu
-            </div>
-            {events.map(ev => <EventRow key={ev.id} ev={ev} />)}
-          </>
+          search || filter !== 'all' ? (
+            <>
+              <div className="text-[10px] text-[#444] font-semibold uppercase tracking-wider mb-3">
+                Rezultatai · {events.length}
+              </div>
+              {events.map(ev => <EventRow key={ev.id} ev={ev} />)}
+            </>
+          ) : (
+            groups.map(g => (
+              <div key={g.label} className="mb-6">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="text-[10px] text-[#444] font-semibold uppercase tracking-wider">
+                    {g.label}
+                  </div>
+                  <div className="text-[10px] text-[#333]">{g.events.length} renginiai</div>
+                </div>
+                {g.events.map(ev => <EventRow key={ev.id} ev={ev} />)}
+              </div>
+            ))
+          )
         )}
 
       </div>
