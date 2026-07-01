@@ -77,10 +77,10 @@ export default function EventDetail() {
 
   const report = async () => {
     if (!user) { navigate('/login'); return }
-    if (!window.confirm('Pranešti apie šį renginį?')) return
+    if (!window.confirm('Pranešti apie si renginį?')) return
     try {
       await api.post(`/api/events/${id}/report`, { reason: 'Inappropriate content' })
-      alert('Ačiū! Pranešimas gautas.')
+      alert('Aciu! Pranesimas gautas.')
     } catch (err) {
       console.error(err)
     }
@@ -176,7 +176,7 @@ export default function EventDetail() {
                 {event.time_label}
               </span>
 
-              {/* Only show free/paid for user posted events */}
+              {/* Only show free/paid badge for user posted events */}
               {event.source !== 'kaunaspilnasrenginiu' && (
                 <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${
                   event.is_free
@@ -220,13 +220,13 @@ export default function EventDetail() {
               </div>
             )}
 
-            {/* Action buttons */}
+ {/* Action buttons */}
             <div className="flex gap-3 mt-6">
 
-              {/* For scraped events — link to original page */}
-              {event.source === 'kaunaspilnasrenginiu' && event.ticket_url && (
+              {/* Scraped events — Daugiau info button */}
+              {event.source === 'kaunaspilnasrenginiu' && (
                 <a
-                  href={event.ticket_url}
+                  href={event.ticket_url || 'https://kaunaspilnasrenginiu.lt/lt/renginiai'}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex-1 font-bold py-3 rounded-xl text-sm text-center bg-[#1a1a1a] border border-[#2a2a2a] text-[#888] hover:border-[#4ade80] hover:text-[#4ade80] transition-colors flex items-center justify-center gap-2"
@@ -236,7 +236,7 @@ export default function EventDetail() {
                 </a>
               )}
 
-              {/* For paid user events — show ticket button */}
+              {/* User posted paid events — ticket button */}
               {event.source !== 'kaunaspilnasrenginiu' && !event.is_free && event.ticket_url && (
                 <a
                   href={event.ticket_url}
@@ -284,7 +284,7 @@ export default function EventDetail() {
                   rel="noopener noreferrer"
                   className="text-[10px] text-[#333] hover:text-[#555] transition-colors"
                 >
-                  Šaltinis: kaunaspilnasrenginiu.lt
+                  Saltinis: kaunaspilnasrenginiu.lt
                 </a>
               </div>
             )}
